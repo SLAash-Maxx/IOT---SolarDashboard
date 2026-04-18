@@ -1,17 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar Smart Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; text-align: center; margin: 0; padding: 20px; }
-        .container { display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; }
-        .card { background: #1e1e1e; border-radius: 15px; padding: 20px; margin: 10px; width: 180px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-bottom: 5px solid #00adb5; }
-        h1 { color: #00adb5; }
-        .value { font-size: 2em; font-weight: bold; margin: 10px 0; color: #eee; }
-        .unit { font-size: 0.5em; color: #888; }
-        .status { margin-top: 30px; color: #444; font-size: 0.8em; }
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; text-align: center; margin: 0; padding: 10px; }
+        h1 { color: #00adb5; font-size: 1.5em; margin-top: 20px; }
+        
+        /* 2 by 2 Grid Layout */
+        .container { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 15px; 
+            padding: 15px; 
+            max-width: 500px; 
+            margin: auto; 
+        }
+        
+        .card { 
+            background: #1e1e1e; 
+            border-radius: 20px; 
+            padding: 25px 10px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); 
+            border-bottom: 5px solid #00adb5; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 120px;
+        }
+
+        .label { font-size: 0.85em; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .value { font-size: 1.8em; font-weight: bold; color: #eee; }
+        .unit { font-size: 0.5em; color: #00adb5; margin-left: 3px; }
+        .status { margin-top: 30px; color: #444; font-size: 0.7em; letter-spacing: 1px; }
     </style>
 </head>
 <body>
@@ -20,24 +43,24 @@
     
     <div class="container">
         <div class="card">
-            <div>Solar Voltage</div>
+            <div class="label">Solar Voltage</div>
             <div class="value" id="s-vol">0.0<span class="unit">V</span></div>
         </div>
         <div class="card">
-            <div>Solar Current</div>
+            <div class="label">Solar Current</div>
             <div class="value" id="s-cur">0.0<span class="unit">mA</span></div>
         </div>
         <div class="card">
-            <div>Battery Temp</div>
+            <div class="label">Battery Temp</div>
             <div class="value" id="b-temp">0.0<span class="unit">°C</span></div>
         </div>
         <div class="card">
-            <div>Load Current</div>
+            <div class="label">Load Current</div>
             <div class="value" id="l-cur">0.0<span class="unit">A</span></div>
         </div>
     </div>
 
-    <div id="connection-status" class="status">Connecting to Solar System...</div>
+    <div id="connection-status" class="status">Real-time Data Link Active</div>
 
     <script>
         const firebaseConfig = {
@@ -50,15 +73,6 @@
         db.ref('Solar/Current').on('value', snap => { document.getElementById('s-cur').innerHTML = (snap.val() || 0).toFixed(1) + '<span class="unit">mA</span>'; });
         db.ref('Battery/Temperature').on('value', snap => { document.getElementById('b-temp').innerHTML = (snap.val() || 0).toFixed(1) + '<span class="unit">°C</span>'; });
         db.ref('Load/Current').on('value', snap => { document.getElementById('l-cur').innerHTML = (snap.val() || 0).toFixed(3) + '<span class="unit">A</span>'; });
-
-        db.ref('.info/connected').on('value', snap => {
-            const status = document.getElementById('connection-status');
-            if (snap.val() === true) {
-                status.innerHTML = "Monitoring Active • Real-time Data Link Established";
-            } else {
-                status.innerHTML = "Disconnected • Reconnecting...";
-            }
-        });
     </script>
 </body>
 </html>
