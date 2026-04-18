@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Solar Smart Dashboard</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #121212; color: white; text-align: center; margin: 0; padding: 20px; }
+        .container { display: flex; flex-wrap: wrap; justify-content: center; padding: 20px; }
+        .card { background: #1e1e1e; border-radius: 15px; padding: 20px; margin: 10px; width: 180px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border-bottom: 5px solid #00adb5; }
+        h1 { color: #00adb5; }
+        .value { font-size: 2em; font-weight: bold; margin: 10px 0; color: #eee; }
+        .unit { font-size: 0.5em; color: #888; }
+        .status { margin-top: 30px; color: #444; font-size: 0.8em; }
+    </style>
+</head>
+<body>
+
+    <h1>Solar Energy Monitor</h1>
+    
+    <div class="container">
+        <div class="card">
+            <div>Solar Voltage</div>
+            <div class="value" id="s-vol">0.0<span class="unit">V</span></div>
+        </div>
+        <div class="card">
+            <div>Solar Current</div>
+            <div class="value" id="s-cur">0.0<span class="unit">mA</span></div>
+        </div>
+        <div class="card">
+            <div>Battery Temp</div>
+            <div class="value" id="b-temp">0.0<span class="unit">°C</span></div>
+        </div>
+        <div class="card">
+            <div>Load Current</div>
+            <div class="value" id="l-cur">0.0<span class="unit">A</span></div>
+        </div>
+    </div>
+
+    <div id="connection-status" class="status">Connecting to Solar System...</div>
+
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://project-solar-c2245-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        db.ref('Solar/Voltage').on('value', snap => { document.getElementById('s-vol').innerHTML = (snap.val() || 0).toFixed(2) + '<span class="unit">V</span>'; });
+        db.ref('Solar/Current').on('value', snap => { document.getElementById('s-cur').innerHTML = (snap.val() || 0).toFixed(1) + '<span class="unit">mA</span>'; });
+        db.ref('Battery/Temperature').on('value', snap => { document.getElementById('b-temp').innerHTML = (snap.val() || 0).toFixed(1) + '<span class="unit">°C</span>'; });
+        db.ref('Load/Current').on('value', snap => { document.getElementById('l-cur').innerHTML = (snap.val() || 0).toFixed(3) + '<span class="unit">A</span>'; });
+
+        db.ref('.info/connected').on('value', snap => {
+            const status = document.getElementById('connection-status');
+            if (snap.val() === true) {
+                status.innerHTML = "Monitoring Active • Real-time Data Link Established";
+            } else {
+                status.innerHTML = "Disconnected • Reconnecting...";
+            }
+        });
+    </script>
+</body>
+</html>
