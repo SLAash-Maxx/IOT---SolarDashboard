@@ -1,113 +1,80 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solar Smart Dashboard</title>
+    <title>Solar Monitoring Dashboard</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #0b0e11; color: white; text-align: center; margin: 0; padding: 10px; }
-        h1 { color: #00adb5; font-size: 1.5em; margin-top: 20px; text-transform: uppercase; letter-spacing: 2px; }
-        
-        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; max-width: 500px; margin: auto; }
-        
-        /* Battery Section (Top) */
-        .battery-card { grid-column: span 2; background: #1e1e1e; border-radius: 20px; padding: 20px; border-bottom: 4px solid #08d9d6; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .battery-header { display: flex; justify-content: space-between; align-items: center; }
-        .battery-base { width: 100%; height: 15px; background: #333; border-radius: 10px; margin-top: 15px; overflow: hidden; }
-        .battery-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ff4c29, #08d9d6); transition: 1s; }
-
-        /* Sensor Cards */
-        .card { background: #1e1e1e; border-radius: 20px; padding: 25px 10px; border-bottom: 4px solid #00adb5; min-height: 120px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        
-        /* Relay Switch Section (Bottom) */
-        .relay-card { grid-column: span 2; background: #1e1e1e; border-radius: 20px; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #ff2e63; margin-top: 5px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        
-        /* Toggle Switch UI */
-        .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: #00adb5; }
-        input:checked + .slider:before { transform: translateX(26px); }
-
-        .label { font-size: 0.75em; color: #888; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
-        .value { font-size: 1.6em; font-weight: bold; color: #eee; }
-        .unit { font-size: 0.6em; color: #00adb5; margin-left: 3px; }
-        .status { margin-top: 30px; color: #444; font-size: 0.7em; }
-    </style>
 </head>
 <body>
 
-    <h1>Solar Energy Monitor</h1>
-    
-    <div class="container">
-        <div class="battery-card">
-            <div class="battery-header">
-                <span class="label" style="margin:0">Battery Capacity</span>
-                <span class="value" id="bat-perc" style="font-size: 1.2em;">0%</span>
-            </div>
-            <div class="battery-base"><div id="bat-fill" class="battery-fill"></div></div>
-        </div>
+    <h2>Solar Monitoring System</h2>
 
-        <div class="card">
-            <div class="label">Solar Voltage</div>
-            <div class="value" id="s-vol">0.00<span class="unit">V</span></div>
-        </div>
-        <div class="card">
-            <div class="label">Solar Current</div>
-            <div class="value" id="s-cur">0.0<span class="unit">mA</span></div>
-        </div>
-        <div class="card">
-            <div class="label">Battery Temp</div>
-            <div class="value" id="b-temp">0.0<span class="unit">°C</span></div>
-        </div>
-        <div class="card">
-            <div class="label">Load Current</div>
-            <div class="value" id="l-cur">0.000<span class="unit">A</span></div>
-        </div>
-
-        <div class="relay-card">
-            <span class="label" style="margin:0; font-size: 1em; color:#eee;">System Relay Control</span>
-            <label class="switch">
-                <input type="checkbox" id="relay-toggle" onchange="toggleRelay()">
-                <span class="slider"></span>
-            </label>
-        </div>
+    <div class="card">
+        <h3>Solar Voltage</h3>
+        <p id="solar-voltage">0.00 V</p>
     </div>
 
-    <div id="connection-status" class="status">Live System Control Active</div>
+    <div class="card">
+        <h3>Load Current</h3>
+        <p id="load-current">0.000 A</p>
+    </div>
+
+    <div class="card">
+        <h3>Temperature</h3>
+        <p id="temp">0.0 °C</p>
+    </div>
+
+    <div class="card">
+        <h3>System Control</h3>
+        <button id="relay-btn" onclick="toggleRelay()">Turn ON</button>
+        <p>Status: <span id="relay-status">OFF</span></p>
+    </div>
 
     <script>
+        // Your Firebase Configuration (මතක ඇතුව මේක දාන්න)
         const firebaseConfig = {
             databaseURL: "https://project-solar-c2245-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        const database = firebase.database();
 
-        // Listen for Real-time Data
-        db.ref('Solar/Voltage').on('value', snap => { 
-            let v = snap.val() || 0;
-            document.getElementById('s-vol').innerHTML = v.toFixed(2) + '<span class="unit">V</span>';
-            let perc = Math.min(Math.max(((v - 10.5) / (12.7 - 10.5)) * 100, 0), 100);
-            document.getElementById('bat-perc').innerText = Math.round(perc) + '%';
-            document.getElementById('bat-fill').style.width = perc + '%';
+        // Solar Voltage Update
+        database.ref('/Solar/Voltage').on('value', (snapshot) => {
+            document.getElementById('solar-voltage').innerText = snapshot.val() + " V";
         });
 
-        db.ref('Solar/Current').on('value', snap => { document.getElementById('s-cur').innerHTML = (snap.val() || 0).toFixed(1) + '<span class="unit">mA</span>'; });
-        db.ref('Battery/Temperature').on('value', snap => { document.getElementById('b-temp').innerHTML = (snap.val() || 0).toFixed(1) + '<span class="unit">°C</span>'; });
-        db.ref('Load/Current').on('value', snap => { document.getElementById('l-cur').innerHTML = (snap.val() || 0).toFixed(3) + '<span class="unit">A</span>'; });
-
-        // Sync Switch state with Firebase
-        db.ref('Control/Relay').on('value', snap => {
-            document.getElementById('relay-toggle').checked = snap.val();
+        // Load Current Update
+        database.ref('/Load/Current').on('value', (snapshot) => {
+            document.getElementById('load-current').innerText = snapshot.val() + " A";
         });
 
-        // Toggle Function
+        // Temperature Update
+        database.ref('/Battery/Temperature').on('value', (snapshot) => {
+            document.getElementById('temp').innerText = snapshot.val() + " °C";
+        });
+
+        // Relay Control Logic
+        let currentRelayState = false;
+        database.ref('/Control/Relay').on('value', (snapshot) => {
+            currentRelayState = snapshot.val();
+            const btn = document.getElementById('relay-btn');
+            const status = document.getElementById('relay-status');
+            
+            if(currentRelayState) {
+                btn.innerText = "Turn OFF";
+                status.innerText = "ON";
+                status.style.color = "green";
+            } else {
+                btn.innerText = "Turn ON";
+                status.innerText = "OFF";
+                status.style.color = "red";
+            }
+        });
+
         function toggleRelay() {
-            let isChecked = document.getElementById('relay-toggle').checked;
-            db.ref('Control/Relay').set(isChecked);
+            database.ref('/Control/Relay').set(!currentRelayState);
         }
     </script>
+
 </body>
 </html>
